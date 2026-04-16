@@ -1017,10 +1017,11 @@ function openAllPres() {
 }
 
 async function checkAndRemove(hwId, sid, sname, card) {
+  const studentId = Number(sid); // 숫자로 변환
   // 체크 처리
-  const existing = DB.find(d => d.type === 'hw_check' && d.hw_id === hwId && d.student_id === sid);
+  const existing = DB.find(d => d.type === 'hw_check' && d.hw_id === hwId && d.student_id === studentId);
   if (!existing) {
-    dbCreate({ type: 'hw_check', hw_id: hwId, student_id: sid, student_name: sname, checked: true, date: todayWithDay() });
+    dbCreate({ type: 'hw_check', hw_id: hwId, student_id: studentId, student_name: sname, checked: true, date: todayWithDay() });
   } else {
     dbUpdate(existing._id, { checked: true });
   }
