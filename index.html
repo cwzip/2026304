@@ -1027,6 +1027,9 @@ async function checkAndRemove(hwId, sid, sname, card) {
   }
   await dbSave();
 
+  // 숙제탭 즉시 업데이트
+  updateHwCard(hwId);
+
   // 카드 애니메이션 후 제거
   card.classList.add('removing');
   setTimeout(() => {
