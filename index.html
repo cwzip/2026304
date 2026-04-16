@@ -737,7 +737,7 @@ function renderHomework() {
       <div class="cgrid">
         ${STUDENTS.map((s, i) => {
           const isDone = doneIds.has(s.id);
-          return `<button class="cell ${isDone ? 'done' : ''}" onclick="toggleCheck('${hw.hw_id}', ${s.id}, '${s.name}', this)"
+          return `<button class="cell ${isDone ? 'done' : ''}" data-sid="${s.id}" onclick="toggleCheck('${hw.hw_id}', ${s.id}, '${s.name}', this)"
             style="${(i+1) % 9 === 0 ? 'border-right:none;' : ''}${i >= STUDENTS.length - (STUDENTS.length % 9 || 9) ? 'border-bottom:none;' : ''}">
             <span class="cell-num">${s.id}</span>
             <span class="cell-name">${s.name}</span>
@@ -817,6 +817,21 @@ function updateHwCard(hwId) {
     fill.style.width = pct + '%';
     fill.style.background = allDone ? 'var(--g1)' : 'var(--g3)';
   }
+
+  // 체크 셀 업데이트
+  const cells = card.querySelectorAll('.cell');
+  cells.forEach(cell => {
+    const cellSid = Number(cell.getAttribute('data-sid'));
+    const isDone = doneIds.has(cellSid);
+    const dot = cell.querySelector('.dot');
+    if (isDone) {
+      cell.classList.add('done');
+      if (dot) { dot.classList.add('done'); dot.classList.remove('no'); dot.textContent = '✓'; }
+    } else {
+      cell.classList.remove('done');
+      if (dot) { dot.classList.remove('done'); dot.classList.add('no'); dot.textContent = ''; }
+    }
+  });
 
   // 미제출 목록 — 없으면 새로 만들고, 있으면 업데이트, 전원완료면 숨김
   let incEl = card.querySelector('.hw-incomplete');
