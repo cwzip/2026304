@@ -258,6 +258,7 @@ input[type=text]:focus { border-color: var(--mint); box-shadow: 0 0 0 3px rgba(6
 .empty { text-align: center; padding: 40px 20px; color: var(--sub); }
 .empty svg { width: 36px; height: 36px; margin: 0 auto 10px; opacity: 0.25; display: block; }
 .empty p { font-size: 13px; }
+[contenteditable]:empty:before { content: attr(placeholder); color: #bbb; pointer-events: none; }
 
 /* ── TOAST ── */
 #toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: #2d3748; color: white; padding: 10px 20px; border-radius: 99px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow-md); z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.25s; white-space: nowrap; }
@@ -306,6 +307,10 @@ select:focus { border-color: var(--mint); }
     <button class="tab" data-tab="monthly">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       숙제 현황
+    </button>
+    <button class="tab" data-tab="memo">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      메모
     </button>
   </nav>
 
@@ -421,6 +426,33 @@ select:focus { border-color: var(--mint); }
       </div>
       <div id="monthly-body"></div>
     </div>
+
+    <!-- 메모 탭 -->
+    <div class="pane" id="pane-memo">
+      <div style="max-width:900px;margin:0 auto;">
+        <div style="background:white;border:1.5px solid var(--border);border-radius:var(--r);padding:14px 22px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow);">
+          <div id="memo-date-display" style="font-size:24px;font-weight:900;color:var(--text);letter-spacing:-0.5px;"></div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-primary" onclick="saveMemo()">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              저장
+            </button>
+            <button class="btn btn-blue" onclick="openMemoFullscreen()">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+              전체화면
+            </button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body" style="padding:24px;">
+            <div id="memo-editor" contenteditable="true" spellcheck="false"
+              style="min-height:400px;font-size:38px;font-weight:700;line-height:1.8;outline:none;color:var(--text);font-family:'Noto Sans KR',sans-serif;white-space:pre-wrap;"
+              placeholder="여기를 클릭해서 메모를 작성하세요..."></div>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--sub);margin-top:8px;text-align:center;">클릭해서 바로 편집 · 저장 버튼으로 보존</p>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -469,6 +501,18 @@ select:focus { border-color: var(--mint); }
     </div>
   </div>
 </div>
+<!-- 메모 전체화면 -->
+<div id="memo-fullscreen" style="display:none;position:fixed;inset:0;z-index:150;background:#1a1f2e;flex-direction:column;padding:40px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-shrink:0;">
+    <div id="memo-fs-date" style="font-size:32px;font-weight:900;color:white;letter-spacing:-0.5px;"></div>
+    <button onclick="closeMemoFullscreen()" style="padding:10px 24px;border-radius:99px;font-size:14px;font-weight:600;color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);cursor:pointer;font-family:inherit;">
+      닫기 (ESC)
+    </button>
+  </div>
+  <div id="memo-fs-editor" contenteditable="true" spellcheck="false"
+    style="flex:1;font-size:56px;font-weight:700;line-height:1.8;outline:none;color:white;font-family:'Noto Sans KR',sans-serif;overflow-y:auto;white-space:pre-wrap;"></div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -579,6 +623,7 @@ document.querySelectorAll('.tab').forEach(btn => {
     if (tab === 'homework') renderHomework();
     if (tab === 'review') renderReviewList();
     if (tab === 'monthly') renderMonthly();
+    if (tab === 'memo') initMemo();
   });
 });
 
@@ -891,12 +936,7 @@ function closeConfirm() {
   confirmCallback = null;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('confirm-ok-btn').addEventListener('click', () => {
-    closeConfirm();
-    if (confirmCallback) confirmCallback();
-  });
-});
+// confirm 버튼은 init 안에서 처리
 
 function editHomework(id) {
   const hw = DB.find(d => d._id === id);
@@ -1076,7 +1116,7 @@ function closePres() {
   document.getElementById('pres-notice').textContent = '';
   document.getElementById('pres').classList.remove('open');
 }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closePres(); });
+
 
 // ══════════════════════════════════════
 // 조회 탭
@@ -1356,6 +1396,65 @@ function exportExcel() {
 }
 
 // ══════════════════════════════════════
+// 메모
+// ══════════════════════════════════════
+function initMemo() {
+  // 날짜 표시
+  const d = new Date();
+  const days = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
+  const dateStr = d.getFullYear() + '년 ' + (d.getMonth()+1) + '월 ' + d.getDate() + '일 ' + days[d.getDay()];
+  document.getElementById('memo-date-display').textContent = dateStr;
+
+  // 저장된 메모 불러오기
+  const saved = DB.find(d => d.type === 'memo');
+  const editor = document.getElementById('memo-editor');
+  if (saved) editor.textContent = saved.content;
+
+  // placeholder 처리
+  editor.addEventListener('focus', () => { editor.style.opacity = '1'; });
+}
+
+async function saveMemo() {
+  const content = document.getElementById('memo-editor').textContent;
+  const existing = DB.find(d => d.type === 'memo');
+  if (existing) {
+    dbUpdate(existing._id, { content });
+  } else {
+    dbCreate({ type: 'memo', content });
+  }
+  await dbSave();
+  toast('✅ 메모가 저장되었습니다');
+}
+
+function openMemoFullscreen() {
+  const d = new Date();
+  const days = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
+  const dateStr = d.getFullYear() + '년 ' + (d.getMonth()+1) + '월 ' + d.getDate() + '일 ' + days[d.getDay()];
+  document.getElementById('memo-fs-date').textContent = dateStr;
+
+  // 현재 메모 내용 전체화면에 동기화
+  const content = document.getElementById('memo-editor').textContent;
+  document.getElementById('memo-fs-editor').textContent = content;
+
+  const fs = document.getElementById('memo-fullscreen');
+  fs.style.display = 'flex';
+}
+
+function closeMemoFullscreen() {
+  // 전체화면에서 편집한 내용을 메모탭에도 반영
+  const content = document.getElementById('memo-fs-editor').textContent;
+  document.getElementById('memo-editor').textContent = content;
+  document.getElementById('memo-fullscreen').style.display = 'none';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeMemoFullscreen();
+    closePres();
+  }
+});
+
+// ══════════════════════════════════════
 // 초기화
 // ══════════════════════════════════════
 async function init() {
@@ -1364,7 +1463,17 @@ async function init() {
   renderBehavior();
 }
 
-init();
+document.addEventListener('DOMContentLoaded', () => {
+  // confirm 삭제 버튼
+  const okBtn = document.getElementById('confirm-ok-btn');
+  if (okBtn) {
+    okBtn.addEventListener('click', () => {
+      closeConfirm();
+      if (confirmCallback) confirmCallback();
+    });
+  }
+  init();
+});
 </script>
 </body>
 </html>
