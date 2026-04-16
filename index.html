@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>학생 관리 시스템</title>
+<title>📌3학년 4반</title>
 <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
@@ -1339,9 +1339,9 @@ function renderMonthly() {
                 <td>
                   <div style="display:flex;align-items:center;gap:5px;">
                     <div style="flex:1;height:6px;border-radius:99px;background:#d1d5db;min-width:40px;">
-                      <div style="width:${s.pct}%;height:100%;border-radius:99px;background:${s.pct>=50?'#2563eb':'#d1d5db'};"></div>
+                      <div style="width:${s.pct}%;height:100%;border-radius:99px;background:${s.pct===100?'#6ee7b7':'#e5e7eb'};"></div>
                     </div>
-                    <span style="font-size:11px;font-weight:700;color:${s.pct>=50?'#2563eb':'#6b7280'};">${s.pct}%</span>
+                    <span style="font-size:11px;font-weight:700;color:${s.pct===100?'#059669':'#9ca3af'};">${s.pct}%</span>
                   </div>
                 </td>
               </tr>`).join('')}
