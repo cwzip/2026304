@@ -284,10 +284,7 @@ select:focus { border-color: var(--mint); }
     </div>
     <div class="header-right">
       <span id="hdate" style="font-size:12px;opacity:0.7;align-self:center;"></span>
-      <button class="hbtn" onclick="exportExcel()">
-        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        엑셀 내보내기
-      </button>
+
     </div>
   </header>
 
@@ -366,6 +363,10 @@ select:focus { border-color: var(--mint); }
             <h2 style="font-size:17px;font-weight:800;">학생별 행동 기록</h2>
             <p style="font-size:12px;color:var(--sub);margin-top:2px;">학생을 클릭하면 상세 기록을 볼 수 있어요</p>
           </div>
+          <button class="btn btn-ghost btn-sm" onclick="exportBehaviorExcel()">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            엑셀 내보내기
+          </button>
         </div>
         <div class="search">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -399,12 +400,12 @@ select:focus { border-color: var(--mint); }
             <div class="card-head">
               <span class="card-title" style="display:flex;align-items:center;gap:6px;">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                학부모 상담 메모
+                보호자 상담 메모
               </span>
               <button class="btn btn-primary btn-sm" onclick="saveConsultMemo()">저장</button>
             </div>
             <div class="card-body">
-              <textarea id="consult-memo" rows="8" placeholder="학부모 상담 내용을 입력하세요..."></textarea>
+              <textarea id="consult-memo" rows="8" placeholder="보호자 상담 내용을 입력하세요..."></textarea>
               <p style="font-size:11px;color:var(--sub);margin-top:6px;">학생별로 저장됩니다</p>
             </div>
           </div>
@@ -1169,7 +1170,7 @@ function renderDetailRecords() {
 }
 
 // ══════════════════════════════════════
-// 학부모 상담 메모
+// 보호자 상담 메모
 // ══════════════════════════════════════
 function loadConsultMemo() {
   if (!detailStudentId) return;
@@ -1337,10 +1338,10 @@ function renderMonthly() {
                 }).join('')}
                 <td>
                   <div style="display:flex;align-items:center;gap:5px;">
-                    <div style="flex:1;height:4px;border-radius:99px;background:#e0e0e0;min-width:36px;">
-                      <div style="width:${s.pct}%;height:100%;border-radius:99px;background:${s.pct===100?'var(--g1)':s.pct>=50?'#2980b9':'var(--red)'};"></div>
+                    <div style="flex:1;height:6px;border-radius:99px;background:#d1d5db;min-width:40px;">
+                      <div style="width:${s.pct}%;height:100%;border-radius:99px;background:${s.pct>=50?'#2563eb':'#d1d5db'};"></div>
                     </div>
-                    <span style="font-size:11px;font-weight:700;color:${s.pct===100?'var(--g1)':s.pct>=50?'#2980b9':'var(--red)'};">${s.pct}%</span>
+                    <span style="font-size:11px;font-weight:700;color:${s.pct>=50?'#2563eb':'#6b7280'};">${s.pct}%</span>
                   </div>
                 </td>
               </tr>`).join('')}
@@ -1366,33 +1367,42 @@ function updateMonthSel() {
 // ══════════════════════════════════════
 // 엑셀 내보내기
 // ══════════════════════════════════════
-function exportExcel() {
+// 행동 기록 엑셀 (기록 조회 탭)
+function exportBehaviorExcel() {
   const wb = XLSX.utils.book_new();
-
-  // 행동 기록 시트
   const bRows = [['번호', '이름', '날짜', '내용']];
   dbGet('behavior').sort((a, b) => a.student_id - b.student_id || a.date.localeCompare(b.date))
     .forEach(r => bRows.push([r.student_id, r.student_name, r.date, r.content]));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(bRows), '행동기록');
+  XLSX.writeFile(wb, `행동기록_${today()}.xlsx`);
+  toast('📊 행동 기록 엑셀이 다운로드되었습니다');
+}
 
-  // 숙제 현황 시트
-  const hws = dbGet('homework');
-  if (hws.length) {
-    const header = ['번호', '이름', ...hws.map(h => `${h.content}(${h.date})`), '완료율'];
-    const rows = [header];
-    STUDENTS.forEach(s => {
-      const checks = hws.map(hw => {
-        const c = DB.find(d => d.type === 'hw_check' && d.hw_id === hw.hw_id && d.student_id === s.id);
-        return c?.checked ? 'O' : 'X';
-      });
-      const done = checks.filter(c => c === 'O').length;
-      rows.push([s.id, s.name, ...checks, `${Math.round(done / hws.length * 100)}%`]);
+// 숙제 현황 엑셀 (숙제 현황 탭)
+function exportExcel() {
+  const wb = XLSX.utils.book_new();
+  const sel = document.getElementById('month-sel');
+  const selectedMonth = sel ? sel.value : '';
+
+  let hws = dbGet('homework');
+  if (selectedMonth) hws = hws.filter(h => h.date && h.date.startsWith(selectedMonth));
+
+  if (!hws.length) { toast('⚠ 내보낼 숙제 데이터가 없습니다'); return; }
+
+  const header = ['번호', '이름', ...hws.map(h => `${h.content}(${h.date})`), '완료율'];
+  const rows = [header];
+  STUDENTS.forEach(s => {
+    const checks = hws.map(hw => {
+      const c = DB.find(d => d.type === 'hw_check' && d.hw_id === hw.hw_id && d.student_id === s.id);
+      return c?.checked ? 'O' : 'X';
     });
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), '숙제현황');
-  }
-
-  XLSX.writeFile(wb, `학생관리_${today()}.xlsx`);
-  toast('📊 엑셀 파일이 다운로드되었습니다');
+    const done = checks.filter(c => c === 'O').length;
+    rows.push([s.id, s.name, ...checks, `${Math.round(done / hws.length * 100)}%`]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), '숙제현황');
+  const filename = selectedMonth ? `숙제현황_${selectedMonth}.xlsx` : `숙제현황_전체.xlsx`;
+  XLSX.writeFile(wb, filename);
+  toast('📊 숙제 현황 엑셀이 다운로드되었습니다');
 }
 
 // ══════════════════════════════════════
